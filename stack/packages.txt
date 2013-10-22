@@ -12,6 +12,7 @@ iputils-tracepath
 libcurl4-openssl-dev
 libevent-dev
 libglib2.0-dev
+libgeos-dev
 libjpeg-dev
 libjpeg62
 libpng12-0
