@@ -38,7 +38,7 @@ case "\$(basename \$0)" in
     ;;
 esac
 
-eval echo \${command}
+\$(eval echo \${command})
 EOF
 
 chmod +x /start
