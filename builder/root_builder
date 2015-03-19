@@ -1,0 +1,51 @@
+#!/bin/bash
+set -eo pipefail
+source $(dirname $0)/config/paths.sh
+
+mkdir -p $app_dir
+mkdir -p $env_dir
+mkdir -p $cache_root
+mkdir -p $buildpack_root
+mkdir -p $build_root/.profile.d
+
+# Grant the user access to all required paths before
+# running the compile phase as non-privileged user.
+
+# Compile the slug
+/build/compile.sh
+
+## Generate start commands
+cat > /start <<EOF
+#!/bin/bash
+export HOME=$app_dir
+cd $app_dir
+
+for file in .profile.d/*.sh; do
+  source \$file
+done
+hash -r
+
+case "\$(basename \$0)" in
+  start)
+    if [[ -f Procfile ]]; then
+      command="\$(ruby -e "require 'yaml';puts YAML.load_file('Procfile')['\$1']")"
+    else
+      command="\$(ruby -e "require 'yaml';puts (YAML.load_file('.release')['default_process_types'] || {})['\$1']")"
+    fi
+    ;;
+  *)
+    command="\$@"
+    ;;
+esac
+
+eval echo \${command}
+EOF
+
+chmod +x /start
+ln -nsf /start /exec
+rm -rf $app_dir
+mv $build_root $app_dir
+
+# Clean up
+rm -rf /build/
+rm -rf /tmp/*
